@@ -1,0 +1,49 @@
+# Installs the EditSutra Windows beta on a clean Windows PC (GitHub's runner) and runs every engine.
+# Run it from the Actions tab ("Windows test" → Run workflow). Premiere Pro is not on the runner.
+name: Windows test
+on:
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download the beta and the test clips
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.0.0-beta.1 -p EditSutra-beta-windows.zip -R $env:GITHUB_REPOSITORY
+          gh release download ci-test-media -p windows-test-media.zip -R $env:GITHUB_REPOSITORY
+          Expand-Archive EditSutra-beta-windows.zip -DestinationPath beta
+          Expand-Archive windows-test-media.zip -DestinationPath media
+      - name: Install, the way a buyer does
+        shell: pwsh
+        run: |
+          $ps = Get-ChildItem beta -Recurse -Filter "Install EditSutra.ps1" | Select-Object -First 1
+          # no one to press Enter or answer the sharing question on a runner
+          (Get-Content $ps.FullName) -replace 'Read-Host.*', '' | Set-Content $ps.FullName
+          New-Item -ItemType Directory -Force "$env:APPDATA\EditSutra\feedback" | Out-Null
+          '{"consent":false,"version":1,"answeredAt":0,"from":"ci"}' | Set-Content "$env:APPDATA\EditSutra\feedback\state.json"
+          powershell -NoProfile -ExecutionPolicy Bypass -File $ps.FullName
+          if (Test-Path "$env:TEMP\EditSutra-install.log") { Get-Content "$env:TEMP\EditSutra-install.log" -Tail 25 }
+          Get-ItemProperty "HKCU:\Software\Adobe\CSXS.12" | Select-Object PlayerDebugMode
+      - name: Run every engine
+        shell: pwsh
+        env:
+          ES_PANEL: C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\com.editsutra
+          ES_MEDIA: ${{ github.workspace }}\media
+        run: node .github/wintest/run.cjs
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editsutra-windows-logs
+          path: |
+            ${{ env.APPDATA }}\EditSutra\editsutra-log.txt
+            ${{ env.TEMP }}\EditSutra-install.log
+          if-no-files-found: ignore
