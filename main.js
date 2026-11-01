@@ -110,49 +110,28 @@
     }
   }
 
-  // ---------- value calculator (visitor's own numbers) ----------
-  const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+  // ---------- time calculator: long videos + Shorts, by hand vs with EditSutra ----------
+  // our estimates from testing: a 10-minute video takes about 4 hours by hand and 40 minutes with EditSutra;
+  // a Short about 60 minutes by hand and 15 minutes with EditSutra
+  const inr = (n) => '\u20b9' + Math.round(n).toLocaleString('en-IN');
+  const hrs = (h) => (h < 10 && !Number.isInteger(h) ? h.toFixed(1) : Math.round(h).toLocaleString('en-IN')) + (h === 1 ? ' hour' : ' hours');
   const calc = () => {
-    // our estimate from testing: a 10-minute talking video takes 3.5 to 5 hours by hand and about
-    // 40 minutes with EditSutra, so roughly 0.35 hours saved per finished minute (at least half an hour)
-    const v = +$('c-videos').value, len = +$('c-len').value, r = +$('c-rate').value;
-    const h = Math.max(0.5, Math.round(len * 0.35 * 2) / 2);
-    $('o-videos').textContent = v; $('o-len').textContent = len; $('o-rate').textContent = inr(r);
-    $('o-hours').textContent = h + (h === 1 ? ' hour' : ' hours');
-    const hours = v * h, value = hours * r;
-    $('r-hours').textContent = (Number.isInteger(hours) ? hours : hours.toFixed(1)) + ' hours';
-    $('r-value').textContent = inr(value) + ' / month';
+    const L = +$('k-long').value, Sh = +$('k-short').value, r = +$('k-rate').value;
+    $('k-long-o').textContent = L; $('k-short-o').textContent = Sh; $('k-rate-o').textContent = inr(r);
+    const hand = L * 4 + Sh * 1, withES = L * (40 / 60) + Sh * 0.25, saved = hand - withES, value = saved * r;
+    $('k-without').textContent = hrs(hand); $('k-with').textContent = hrs(withES);
+    $('k-bar').style.width = (hand ? (withES / hand) * 100 : 0) + '%';
+    $('k-saved').textContent = hrs(saved) + ' a month'; $('k-value').textContent = inr(value) + ' / month';
     const days = value > 0 ? Math.max(1, Math.ceil(999 / (value / 30))) : 0;
-    $('r-payback').textContent = days ? (days === 1 ? 'about a day' : 'about ' + days + ' days') : ', ';
+    $('k-payback').textContent = days ? (days === 1 ? 'about a day' : 'about ' + days + ' days') : 'a few weeks';
   };
-  ['c-videos', 'c-len', 'c-rate'].forEach((id) => $(id).addEventListener('input', calc));
-  let calcTracked = false;
-  ['c-videos', 'c-len', 'c-rate'].forEach((id) => $(id).addEventListener('change', () => { if (!calcTracked) { calcTracked = true; track('calculator_used'); } }));
-  calc();
-
-  // ---------- team calculator: a whole editing team, the visitor's own numbers ----------
-  // hours saved per video as in the personal calculator; a working month is 160 hours, and no editor is
-  // counted as saving more than 60 % of it (they also plan, shoot, revise and talk to clients)
-  const teamCalc = () => {
-    const n = +$('t-eds').value, pay = +$('t-pay').value, vids = +$('t-vids').value, len = +$('t-len').value;
-    $('o-t-eds').textContent = n; $('o-t-pay').textContent = inr(pay); $('o-t-vids').textContent = vids; $('o-t-len').textContent = len;
-    const savedPerVideo = Math.max(0.5, len * 0.35), handPerVideo = Math.max(1, len * 0.42);
-    const perEditor = Math.min(vids * savedPerVideo, 160 * 0.6), hours = n * perEditor;
-    const hires = hours / 160, worth = hires * pay, cost = n * 129;
-    $('t-hours').textContent = Math.round(hours).toLocaleString('en-IN') + ' hours';
-    $('t-hires').textContent = (hires < 10 ? hires.toFixed(1) : Math.round(hires)) + ' more editor' + (hires >= 1.05 || hires < 0.95 ? 's' : '');
-    $('t-worth').textContent = inr(worth);
-    $('t-more').textContent = '+' + Math.round(hours / handPerVideo).toLocaleString('en-IN') + ' videos a month';
-    $('t-n').textContent = n + ' editor' + (n === 1 ? '' : 's');
-    $('t-cost').textContent = inr(cost) + ' / month';
-    $('t-roi').textContent = (worth / cost >= 10 ? Math.round(worth / cost) : (worth / cost).toFixed(1)) + '×';
-    const subject = `Team licence: EditSutra for ${n} editors`;
-    $('t-quote').href = `mailto:${S.support || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Hi, we are a team of ${n} editors and want EditSutra for everyone. Please send a team quote.\n\nCompany:\nName:\nWhatsApp:`)}`;
-  };
-  ['t-eds', 't-pay', 't-vids', 't-len'].forEach((id) => $(id).addEventListener('input', teamCalc));
-  let teamTracked = false;
-  ['t-eds', 't-pay', 't-vids', 't-len'].forEach((id) => $(id).addEventListener('change', () => { if (!teamTracked) { teamTracked = true; track('team_calculator_used'); } }));
-  teamCalc();
+  if ($('k-long')) {
+    ['k-long', 'k-short', 'k-rate'].forEach((id) => $(id).addEventListener('input', calc));
+    let calcTracked = false;
+    ['k-long', 'k-short', 'k-rate'].forEach((id) => $(id).addEventListener('change', () => { if (!calcTracked) { calcTracked = true; track('calculator_used'); } }));
+    calc();
+    const q = $('k-team'); if (q) q.href = `mailto:${S.support || ''}?subject=${encodeURIComponent('Team licence: EditSutra')}&body=${encodeURIComponent('Hi, we are a team of ___ editors and want EditSutra for everyone. Please send a team quote.\n\nCompany:\nName:\nWhatsApp:')}`;
+  }
 
   // ---------- phone: the sticky trial bar hides at the top of the page and where a trial button is in view ----------
   const mcta = $('m-cta');
@@ -179,7 +158,7 @@
   // With SITE.waitlistUrl (e.g. a Google Form) the visitor goes there; otherwise their email app opens a
   // ready-written message to support, so nothing is lost and no data is sent anywhere else.
   const form = $('waitlist'), proMsg = $('pro-msg');
-  form.addEventListener('submit', (e) => {
+  if (form) form.addEventListener('submit', (e) => {
     e.preventDefault();
     const f = new FormData(form), name = (f.get('name') || '').trim(), email = (f.get('email') || '').trim(), wa = (f.get('whatsapp') || '').trim();
     const say = (t) => { proMsg.hidden = false; proMsg.textContent = t; };
@@ -202,13 +181,13 @@
   // ---------- illustration: a timeline whose pauses and retake are removed ----------
   const pattern = ['sp', 'pa', 'sp', 're', 'sp', 'pa', 'sp', 'sp', 'pa', 'sp'], widths = [14, 6, 11, 9, 16, 5, 9, 12, 7, 11];
   ['tl-v', 'tl-a'].forEach((id) => {
-    const row = $(id);
+    const row = $(id); if (!row) return;
     pattern.forEach((k, i) => { const b = document.createElement('i'); b.className = 'blk ' + k; b.style.flexGrow = widths[i]; row.appendChild(b); });
   });
   const label = $('tl-label');
   const runCut = () => {
     document.querySelectorAll('.timeline .blk.pa, .timeline .blk.re').forEach((b) => b.classList.add('gone'));
-    label.textContent = 'After · review-ready';
+    if (label) label.textContent = 'After · review-ready';
   };
 
   // ---------- scroll reveals (light; off for reduced motion) ----------
