@@ -12,6 +12,8 @@
     const sync = () => { const i = ACTS.filter(([s]) => vid.currentTime >= s).length - 1; if (i !== last) { last = i; say(i); } };
     vid.addEventListener('timeupdate', sync); vid.addEventListener('seeked', sync);
     steps.forEach((b) => b.addEventListener('click', () => { vid.currentTime = +b.dataset.t + 0.05; vid.play().catch(() => {}); }));
+    // plays once and rests on the download card (a loop jumped from the end card back to frame 1 and flickered)
+    vid.addEventListener('ended', () => { vid.currentTime = Math.max(0, vid.duration - 0.6); vid.pause(); });
     // reduced motion: hold the finished timeline as a still, the visitor can still step through it
     if (still) { vid.removeAttribute('autoplay'); vid.pause(); vid.addEventListener('loadedmetadata', () => { vid.currentTime = 29; }, { once: true }); }
   }
