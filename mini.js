@@ -173,10 +173,11 @@
   const errors = {}, live = new Set(), dpr = Math.min(2, window.devicePixelRatio || 1);
   const setup = (c) => { const w = c.clientWidth || 320, h = Math.round(w * 9 / 16); c.width = w * dpr; c.height = h * dpr; c._w = w; c._h = h; c._x = c.getContext('2d'); };
   const paint = (c, t) => { const x = c._x, w = c._w, h = c._h, f = D[c.dataset.mini]; if (!f) return; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h); x.save(); x.scale(w / 320, h / 180); bg(x, 320, 180, c.dataset.mini); lastScene = null; try { f(x, Math.min(1, t / 0.85), 320, 180); } catch (e) { errors[c.dataset.mini] = String(e); /* a broken drawer leaves its card plain */ } x.restore(); };
-  const obs = new IntersectionObserver((es) => es.forEach((e) => { const c = e.target; if (e.isIntersecting) { if (!c._x) setup(c); if (still) paint(c, 0.98); else live.add(c); } else live.delete(c); }), { rootMargin: '120px' });
-  let t0 = performance.now();
-  const loop = (now) => { const p = ((now - t0) / 1000 / LOOP) % 1; live.forEach((c) => paint(c, p)); requestAnimationFrame(loop); };
-  if (!still) requestAnimationFrame(loop);
+  // the frame loop runs only while at least one card is on screen (off-screen work stopped)
+  let t0 = performance.now(), raf = 0;
+  const loop = (now) => { const p = ((now - t0) / 1000 / LOOP) % 1; live.forEach((c) => paint(c, p)); raf = live.size ? requestAnimationFrame(loop) : 0; };
+  const wake = () => { if (!raf && !still && live.size) raf = requestAnimationFrame(loop); };
+  const obs = new IntersectionObserver((es) => { es.forEach((e) => { const c = e.target; if (e.isIntersecting) { if (!c._x) setup(c); if (still) paint(c, 0.98); else live.add(c); } else live.delete(c); }); wake(); }, { rootMargin: '120px' });
   window.ESMini = { errors, test: () => { const c = document.createElement('canvas'); c.width = 320; c.height = 180; c._x = c.getContext('2d'); c._w = 320; c._h = 180; Object.keys(D).forEach((k) => { c.dataset.mini = k; [0, 0.3, 0.6, 0.98].forEach((t) => paint(c, t)); }); return errors; }, watch: (root) => root.querySelectorAll('canvas[data-mini]').forEach((c) => obs.observe(c)), kinds: Object.keys(D) };
   window.ESMini.watch(document);
 })();

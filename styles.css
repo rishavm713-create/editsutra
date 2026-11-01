@@ -833,3 +833,12 @@ body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-in
 .pill .cl-mark { margin-right: 2px; } .nav-cl { display: inline-flex; align-items: center; gap: 6px; }
 h1 .cl-mark.big { width: .8em; height: .8em; vertical-align: -.02em; margin-left: .1em; }
 .disc { font-size: 11px; color: var(--dim); line-height: 1.5; }
+.pro-term .ex { font: 600 10px/1 var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+/* landing-page pass: price on the first screen, visible answers, terms by the plans */
+.hero-price { margin: 14px 0 4px; font-size: 16px; color: var(--muted); } .hero-price b { color: #fff; font-size: 18px; } .hero-price span { color: var(--dim); font-size: 14px; }
+.plan-terms { max-width: 760px; margin: 18px auto 0; text-align: center; color: var(--muted); font-size: 15px; }
+.answers { display: grid; gap: 12px; } @media (min-width: 760px) { .answers { grid-template-columns: repeat(2, 1fr); } } @media (min-width: 1100px) { .answers { grid-template-columns: repeat(3, 1fr); } }
+.answers > * { min-width: 0; }
+.ans { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.ans h3 { font-size: 16px; margin-bottom: 6px; } .ans p { margin: 0; color: var(--muted); font-size: 15px; }
+.dl-why a { color: var(--accent-soft); }
