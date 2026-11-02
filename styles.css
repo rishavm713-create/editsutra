@@ -842,3 +842,14 @@ h1 .cl-mark.big { width: .8em; height: .8em; vertical-align: -.02em; margin-left
 .ans { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
 .ans h3 { font-size: 16px; margin-bottom: 6px; } .ans p { margin: 0; color: var(--muted); font-size: 15px; }
 .dl-why a { color: var(--accent-soft); }
+/* phones: founder photo on top, text full width; playground preview first and kept in view while tapping tools */
+@media (max-width: 819px) {
+  .founder-in { grid-template-columns: 1fr; gap: 18px; }
+  .founder-in img { width: 112px; height: 112px; }
+}
+@media (max-width: 959px) {
+  .pg { display: flex; flex-direction: column; }
+  .pg-bay { order: -1; position: sticky; top: 66px; z-index: 5; box-shadow: 0 18px 30px -12px rgba(0,0,0,.9); }
+  .pg-tracks .trk { height: 14px; margin-top: 3px; }
+  .pg-status { padding: 8px 12px; min-height: 0; font-size: 13px; }
+}
