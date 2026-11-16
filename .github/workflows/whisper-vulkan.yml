@@ -1,0 +1,33 @@
+# Builds whisper.cpp v1.9.5 for Windows x64 with the Vulkan GPU backend (NVIDIA, AMD, Intel) for EditSutra.
+# The CPU backends stay in the build, so computers without a GPU still work.
+name: whisper-vulkan-win
+on:
+  push:
+    branches: [build/whisper-vulkan]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ggml-org/whisper.cpp
+          ref: v1.9.5
+      - name: Install Vulkan SDK
+        shell: pwsh
+        run: |
+          $v = "1.4.313.2"
+          curl.exe -s -o "$env:RUNNER_TEMP\vk.exe" -L "https://sdk.lunarg.com/sdk/download/$v/windows/vulkansdk-windows-X64-$v.exe"
+          & "$env:RUNNER_TEMP\vk.exe" --accept-licenses --default-answer --confirm-command install
+          Add-Content $env:GITHUB_ENV "VULKAN_SDK=C:\VulkanSDK\$v"
+          Add-Content $env:GITHUB_PATH "C:\VulkanSDK\$v\bin"
+      - name: Configure
+        run: cmake -S . -B build -A x64 -DBUILD_SHARED_LIBS=ON -DWHISPER_SDL2=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DGGML_VULKAN=ON
+      - name: Build
+        run: cmake --build build --config Release -j 4
+      - name: List
+        run: dir build\bin\Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whisper-vulkan-win-x64
+          path: build/bin/Release/*
